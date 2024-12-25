@@ -64,15 +64,15 @@ mkdir -p llvm_tools
 pushd llvm_tools
 
 wget -O llvm-11.0.0.src.tar.xz https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0/llvm-11.0.0.src.tar.xz
-tar -xf --no-same-owner llvm-11.0.0.src.tar.xz
+tar -xf llvm-11.0.0.src.tar.xz --no-same-owner
 mv      llvm-11.0.0.src        llvm
 
 wget -O  clang-11.0.0.src.tar.xz https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0/clang-11.0.0.src.tar.xz
-tar -xf  --no-same-owner clang-11.0.0.src.tar.xz
+tar -xf clang-11.0.0.src.tar.xz --no-same-owner
 mv       clang-11.0.0.src        clang
 
 wget -O compiler-rt-11.0.0.src.tar.xz https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0/compiler-rt-11.0.0.src.tar.xz
-tar -xf --no-same-owner compiler-rt-11.0.0.src.tar.xz
+tar -xf compiler-rt-11.0.0.src.tar.xz --no-same-owner
 mv      compiler-rt-11.0.0.src        compiler-rt
 
 mkdir -p build
