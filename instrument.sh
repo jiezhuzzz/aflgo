@@ -22,7 +22,7 @@ export CXX=$FUZZER/repo/instrument/aflgo-clang++
     pushd $TARGET/repo
 	echo "## Get Target"
 	echo "targets"
-	grep -nr MAGMA_RECORD | cut -f1,2 -d':' | grep -v ".orig:"  | grep -v "Binary file" > $OUT/BBtargets.txt
+	grep -nr MAGMA_LOG | cut -f1,2 -d':' | grep -v ".orig:"  | grep -v "Binary file" > $OUT/BBtargets.txt
 
 	cat $OUT/BBtargets.txt
 	popd
@@ -42,6 +42,7 @@ export CFLAGS="$CFLAGS $ADDITIONAL"
 export CXXFLAGS="$CXXFLAGS $ADDITIONAL"
 export LDFLAGS="$LDFLAGS -lpthread"
 "$TARGET/build.sh"
+cp $TARGET/repo/*.0.0.*.bc $OUT/
 
 echo "Function targets"
 cat $OUT/Ftargets.txt
