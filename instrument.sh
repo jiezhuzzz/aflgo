@@ -11,6 +11,20 @@ set -e
 ##
 
 # build magma
+
+aflgo_patch_file="$FUZZER/src/aflgo.patch"
+# openssl
+if [ "$(basename $TARGET)" == "openssl" ]; then
+    echo "TARGET openssl"
+    if [ -f "$aflgo_patch_file" ]; then
+        patch -p1 -d "$FUZZER/repo" <"$aflgo_patch_file"
+        echo "Fuzzing patch file $aflgo_patch_file applied."
+        "$FUZZER/build.sh"
+    fi
+
+fi
+
+
 "$MAGMA/build.sh"
 
 export CC=$FUZZER/repo/instrument/aflgo-clang
@@ -38,11 +52,73 @@ export LIBS="$LIBS -l:afl_driver.o -lstdc++"
 export COPY_CFLAGS=$CFLAGS
 export COPY_CXXFLAGS=$CXXFLAGS
 export ADDITIONAL="-targets=$OUT/BBtargets.txt -outdir=$OUT -flto -fuse-ld=gold -Wl,-plugin-opt=save-temps"
-export CFLAGS="$CFLAGS $ADDITIONAL"
-export CXXFLAGS="$CXXFLAGS $ADDITIONAL"
 export LDFLAGS="$LDFLAGS -lpthread"
+
+if [ "$(basename $TARGET)" == "openssl" ]; then
+    echo "TARGET openssl"
+    CONFIGURE_FLAGS="$ADDITIONAL"
+else
+    CFLAGS="$TEMP_CFLAGS $ADDITIONAL"
+    CXXFLAGS="$TEMP_CXXFLAGS $ADDITIONAL"
+fi
+
+case "$(basename $TARGET)" in
+"openssl")
+    echo "TARGET openssl"
+    export CONFIGURE_FLAGS="$ADDITIONAL"
+    ;;
+# "lua")
+#     LDFLAGS="$LDFLAGS -flto"
+#     sed -i '/\$(CC) -o \$@ \$(LDFLAGS) \$(MYLDFLAGS) \$(LUA_O) \$(CORE_T) \$(LIBS) \$(MYLIBS) \$(DL)/ s/\$(CC) -o/\$(CC) \$(CFLAGS) -o/' $TARGET/repo/makefile
+#     CFLAGS="$TEMP_CFLAGS $ADDITIONAL"
+#     CXXFLAGS="$TEMP_CXXFLAGS $ADDITIONAL"
+#     ;;
+*)
+    CFLAGS="$TEMP_CFLAGS $ADDITIONAL"
+    CXXFLAGS="$TEMP_CXXFLAGS $ADDITIONAL"
+    ;;
+esac
+
 "$TARGET/build.sh"
-cp $TARGET/repo/*.0.0.*.bc $OUT/
+
+(
+    pushd $TARGET/repo
+
+    case "$(basename $TARGET)" in
+    "libsndfile")
+        cp ossfuzz/sndfile_fuzzer* $OUT/
+        ;;
+    "libtiff")
+        cp tools/tiffcp* $OUT/
+        ;;
+    "libxml2")
+        cp xmllint* $OUT/
+        ;;
+        # "lua")
+        # sed -i '/\$(CC) \$(CFLAGS) -o \$@ \$(LDFLAGS) \$(MYLDFLAGS) \$(LUA_O) \$(CORE_T) \$(LIBS) \$(MYLIBS) \$(DL)/ s/\$(CC) \$(CFLAGS) -o/\$(CC) -o/' makefile
+        # cp lua* $OUT/
+        # ;;
+    "openssl")
+        fuzzers=$(find fuzz -executable -type f '!' -name \*.py '!' -name \*-test '!' -name \*.pl \( -name "asn1" -o -name "asn1parse" -o -name "bignum" -o -name "server" -o -name "client" -o -name "x509" \))
+        for f in $fuzzers; do
+            cp $f* $OUT/
+        done
+        ;;
+    # "php")
+    #     fuzzers="php-fuzz-json php-fuzz-exif php-fuzz-mbstring php-fuzz-unserialize php-fuzz-parser"
+    #     for f in $fuzzers; do
+    #         cp sapi/fuzzer/$f* "$OUT/${f/php-fuzz-/}"
+    #     done
+    #     ;;
+    "poppler")
+        cp "$WORK/poppler/utils/"{pdfimages*,pdftoppm*} $OUT/
+        ;;
+    *)
+        echo "$(basename $TARGET)"
+        ;;
+    esac
+    popd
+)
 
 echo "Function targets"
 cat $OUT/Ftargets.txt
