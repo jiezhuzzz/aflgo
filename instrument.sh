@@ -54,14 +54,6 @@ export COPY_CXXFLAGS=$CXXFLAGS
 export ADDITIONAL="-targets=$OUT/BBtargets.txt -outdir=$OUT -flto -fuse-ld=gold -Wl,-plugin-opt=save-temps"
 export LDFLAGS="$LDFLAGS -lpthread"
 
-if [ "$(basename $TARGET)" == "openssl" ]; then
-    echo "TARGET openssl"
-    CONFIGURE_FLAGS="$ADDITIONAL"
-else
-    CFLAGS="$TEMP_CFLAGS $ADDITIONAL"
-    CXXFLAGS="$TEMP_CXXFLAGS $ADDITIONAL"
-fi
-
 case "$(basename $TARGET)" in
 "openssl")
     echo "TARGET openssl"
@@ -70,12 +62,12 @@ case "$(basename $TARGET)" in
 # "lua")
 #     LDFLAGS="$LDFLAGS -flto"
 #     sed -i '/\$(CC) -o \$@ \$(LDFLAGS) \$(MYLDFLAGS) \$(LUA_O) \$(CORE_T) \$(LIBS) \$(MYLIBS) \$(DL)/ s/\$(CC) -o/\$(CC) \$(CFLAGS) -o/' $TARGET/repo/makefile
-#     CFLAGS="$TEMP_CFLAGS $ADDITIONAL"
-#     CXXFLAGS="$TEMP_CXXFLAGS $ADDITIONAL"
+#     CFLAGS="$COPY_CFLAGS $ADDITIONAL"
+#     CXXFLAGS="$COPY_CXXFLAGS $ADDITIONAL"
 #     ;;
 *)
-    CFLAGS="$TEMP_CFLAGS $ADDITIONAL"
-    CXXFLAGS="$TEMP_CXXFLAGS $ADDITIONAL"
+    CFLAGS="$COPY_CFLAGS $ADDITIONAL"
+    CXXFLAGS="$COPY_CXXFLAGS $ADDITIONAL"
     ;;
 esac
 
@@ -134,6 +126,13 @@ head -n5 $OUT/distance.cfg.txt
 
 
 echo "## Instrument the subject"
-export CFLAGS="$COPY_CFLAGS -distance=$OUT/distance.cfg.txt"
-export CXXFLAGS="$COPY_CXXFLAGS -distance=$OUT/distance.cfg.txt"
+
+if [ "$(basename $TARGET)" == "openssl" ]; then
+    echo "clean CONFIGURE_FLAGS"
+    CONFIGURE_FLAGS="-distance=$OUT/distance.cfg.txt"
+    CFLAGS="$COPY_CFLAGS" CXXFLAGS="$COPY_CXXFLAGS"
+else
+    CFLAGS="$COPY_CFLAGS -distance=$OUT/distance.cfg.txt" CXXFLAGS="$COPY_CXXFLAGS -distance=$OUT/distance.cfg.txt"
+fi
+
 "$TARGET/build.sh"
