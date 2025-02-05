@@ -12,19 +12,6 @@ set -e
 
 # build magma
 
-aflgo_patch_file="$FUZZER/src/aflgo.patch"
-# openssl
-if [ "$(basename $TARGET)" == "openssl" ]; then
-    echo "TARGET openssl"
-    if [ -f "$aflgo_patch_file" ]; then
-        patch -p1 -d "$FUZZER/repo" <"$aflgo_patch_file"
-        echo "Fuzzing patch file $aflgo_patch_file applied."
-        "$FUZZER/build.sh"
-    fi
-
-fi
-
-
 "$MAGMA/build.sh"
 
 export CC=$FUZZER/repo/instrument/aflgo-clang
@@ -57,7 +44,7 @@ export LDFLAGS="$LDFLAGS -lpthread"
 case "$(basename $TARGET)" in
 "openssl")
     echo "TARGET openssl"
-    export CONFIGURE_FLAGS="$ADDITIONAL"
+    export CONFIGURE_FLAGS="$ADDITIONAL no-asm"
     ;;
 # "lua")
 #     LDFLAGS="$LDFLAGS -flto"
@@ -103,7 +90,7 @@ esac
     #     done
     #     ;;
     "poppler")
-        cp "$WORK/poppler/utils/"{pdfimages*,pdftoppm*} $OUT/
+        cp "$TARGET/work/poppler/utils/"{pdfimages*,pdftoppm*} $OUT/
         ;;
     *)
         echo "$(basename $TARGET)"
