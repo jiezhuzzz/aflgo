@@ -116,7 +116,7 @@ echo "## Instrument the subject"
 
 if [ "$(basename $TARGET)" == "openssl" ]; then
     echo "clean CONFIGURE_FLAGS"
-    CONFIGURE_FLAGS="-distance=$OUT/distance.cfg.txt"
+    CONFIGURE_FLAGS="-distance=$OUT/distance.cfg.txt no-asm"
     CFLAGS="$COPY_CFLAGS" CXXFLAGS="$COPY_CXXFLAGS"
 else
     CFLAGS="$COPY_CFLAGS -distance=$OUT/distance.cfg.txt" CXXFLAGS="$COPY_CXXFLAGS -distance=$OUT/distance.cfg.txt"
