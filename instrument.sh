@@ -29,6 +29,10 @@ export CXX=$FUZZER/repo/instrument/aflgo-clang++
 	popd
 )
 
+if [ "$(basename $TARGET)" == "sqlite3" ]; then # cannot find Ftarget
+    echo "sqlite3ExprAddCollateToken" > $OUT/Ftargets.txt
+fi
+
 
 echo "## Build Target"
 export CC=$FUZZER/repo/instrument/aflgo-clang
@@ -83,12 +87,16 @@ esac
             cp $f* $OUT/
         done
         ;;
-    # "php")
-    #     fuzzers="php-fuzz-json php-fuzz-exif php-fuzz-mbstring php-fuzz-unserialize php-fuzz-parser"
-    #     for f in $fuzzers; do
-    #         cp sapi/fuzzer/$f* "$OUT/${f/php-fuzz-/}"
-    #     done
-    #     ;;
+    "php")
+        fuzzers="php-fuzz-exif php-fuzz-mbstring php-fuzz-unserialize php-fuzz-parser"
+        for f in $fuzzers; do
+            for file in sapi/fuzzer/"$f"*; do
+                dest_filename="${file##*/}"            # Remove directory path
+                dest_filename="${dest_filename#php-fuzz-}"  # Remove prefix
+                cp "$file" "$OUT/$dest_filename"
+            done
+        done
+        ;;
     "poppler")
         cp "$TARGET/work/poppler/utils/"{pdfimages*,pdftoppm*} $OUT/
         ;;
