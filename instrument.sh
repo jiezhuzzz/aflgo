@@ -29,6 +29,8 @@ export CXX=$FUZZER/repo/instrument/aflgo-clang++
 	popd
 )
 
+# Sqlite3 issue: https://github.com/HexHive/magma/issues/62
+# This target is used for SQL018. Please modify the target function name as required!
 if [ "$(basename $TARGET)" == "sqlite3" ]; then # cannot find Ftarget
     echo "sqlite3ExprAddCollateToken" > $OUT/Ftargets.txt
 fi
@@ -48,14 +50,14 @@ export LDFLAGS="$LDFLAGS -lpthread"
 case "$(basename $TARGET)" in
 "openssl")
     echo "TARGET openssl"
+    # no-asm https://github.com/HexHive/magma/issues/62 is an alternative solution for https://github.com/aflgo/aflgo/issues/12
     export CONFIGURE_FLAGS="$ADDITIONAL no-asm"
     ;;
-# "lua")
-#     LDFLAGS="$LDFLAGS -flto"
-#     sed -i '/\$(CC) -o \$@ \$(LDFLAGS) \$(MYLDFLAGS) \$(LUA_O) \$(CORE_T) \$(LIBS) \$(MYLIBS) \$(DL)/ s/\$(CC) -o/\$(CC) \$(CFLAGS) -o/' $TARGET/repo/makefile
-#     CFLAGS="$COPY_CFLAGS $ADDITIONAL"
-#     CXXFLAGS="$COPY_CXXFLAGS $ADDITIONAL"
-#     ;;
+"lua")
+    LDFLAGS="$LDFLAGS -flto -fuse-ld=gold -Wl,-plugin-opt=save-temps"
+    CFLAGS="$COPY_CFLAGS $ADDITIONAL"
+    CXXFLAGS="$COPY_CXXFLAGS $ADDITIONAL"
+    ;;
 *)
     CFLAGS="$COPY_CFLAGS $ADDITIONAL"
     CXXFLAGS="$COPY_CXXFLAGS $ADDITIONAL"
@@ -77,10 +79,9 @@ esac
     "libxml2")
         cp xmllint* $OUT/
         ;;
-        # "lua")
-        # sed -i '/\$(CC) \$(CFLAGS) -o \$@ \$(LDFLAGS) \$(MYLDFLAGS) \$(LUA_O) \$(CORE_T) \$(LIBS) \$(MYLIBS) \$(DL)/ s/\$(CC) \$(CFLAGS) -o/\$(CC) -o/' makefile
-        # cp lua* $OUT/
-        # ;;
+    "lua")
+        cp lua* $OUT/
+        ;;
     "openssl")
         fuzzers=$(find fuzz -executable -type f '!' -name \*.py '!' -name \*-test '!' -name \*.pl \( -name "asn1" -o -name "asn1parse" -o -name "bignum" -o -name "server" -o -name "client" -o -name "x509" \))
         for f in $fuzzers; do
@@ -88,7 +89,8 @@ esac
         done
         ;;
     "php")
-        fuzzers="php-fuzz-exif php-fuzz-mbstring php-fuzz-unserialize php-fuzz-parser"
+        # fuzzers="php-fuzz-exif php-fuzz-mbstring php-fuzz-unserialize php-fuzz-parser"
+        fuzzers="php-fuzz-exif"  # Since our experiments only use exif. Feel free to set for different programs
         for f in $fuzzers; do
             for file in sapi/fuzzer/"$f"*; do
                 dest_filename="${file##*/}"            # Remove directory path
