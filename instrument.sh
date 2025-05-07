@@ -98,6 +98,9 @@ esac
                 cp "$file" "$OUT/$dest_filename"
             done
         done
+
+        # unlimit memory size
+        sed -i 's|\"\$FUZZER/repo/afl-2\.57b/afl-fuzz\"|\"\$FUZZER/repo/afl-2\.57b/afl-fuzz\" -m none|g' "$FUZZER/run.sh"
         ;;
     "poppler")
         cp "$TARGET/work/poppler/utils/"{pdfimages*,pdftoppm*} $OUT/
